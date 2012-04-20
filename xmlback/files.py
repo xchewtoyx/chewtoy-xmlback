@@ -29,13 +29,13 @@ def transitions(path, shuffle=False):
     returning a link back to the start on completion. 
     """
     images = image_files(path, shuffle)
-    fromfile = None
-    for tofile in images:
+    if len(images)==1:
+        yield(images[0], None)
+    else:
+        fromfile = None
+        for tofile in images:
+            if fromfile:
+                yield (fromfile, tofile)
+            fromfile = tofile
         if fromfile:
-            yield (fromfile, tofile)
-        fromfile = tofile
-    if images:
-        if len(images)==1:
-            yield(images[0], None)
-        else:
             yield(fromfile, images[0])
