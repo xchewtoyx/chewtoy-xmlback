@@ -1,14 +1,7 @@
-#!/usr/bin/python
 # Copyright (c) 2012 Russell Heilling
 # See LICENSE.txt for license details
-import os
-import sys
-import re
 import xml.dom.minidom
 import time
-import random
-
-SUPPORTED = r'.*\.(jpg|png)$'
 
 TIME_PART = {
     'year': 'tm_year',
@@ -75,70 +68,3 @@ class Background(object):
         Convert the minidom object to textual XML representation
         """
         return self.root.toprettyxml(indent='  ')
-
-def image_files(path, shuffle=False):
-    """
-    Return a list of supported image files in the chosen directory
-
-    Paths are normalised and made absolute enabling the images and xml
-    file to be stored in different locations without problems.
-    """
-    assert os.path.isdir(path)
-    supported = re.compile(SUPPORTED)
-    images = []
-    for filename in os.listdir(path):
-        if supported.match(filename):
-            images.append(os.path.realpath(os.path.join(path, filename)))
-    if shuffle:
-        random.shuffle(images)
-    return images
-
-def transitions(path, shuffle=False):
-    """
-    List the files in the target path and iterate over the pairs,
-    returning a link back to the start on completion. 
-    """
-    images = image_files(path, shuffle)
-    fromfile = None
-    for tofile in images:
-        if fromfile:
-            yield (fromfile, tofile)
-        fromfile = tofile
-    if images:
-        if len(images)==1:
-            yield(images[0], None)
-        else:
-            yield(fromfile, images[0])
-        
-def main(path='.', dest='-', duration=900, transition=2):
-    """
-    take a path and list all of the supported image types out to XML
-    format suitable for use as a gnome background.
-
-    path defaults to current directory, destination file defaults to
-    stdout. 
-
-    You cannot enable this background file from the Gnome 3 GUI at the
-    current time (2012-04-19, so the following shell command will be
-    required: 
-
-    gsettings set org.gnome.desktop.background picture-uri \
-              'file:///path/to/background.xml'
-    """
-    if dest == '-':
-        outfile = sys.stdout
-    else:
-        outfile = open(dest, "w")
-
-    background = Background()
-    for (fromfile, tofile) in transitions(path, shuffle=True):
-        background.add_image(fromfile, int(duration)-int(transition))
-        if tofile:
-            background.add_transition(fromfile, tofile, transition)
-    outfile.write(background.toxml())
-
-if __name__ == "__main__":
-    if len(sys.argv) > 5:
-        sys.stderr.write("Usage: xmlback.py [imgdir [outfile.xml]]")
-        sys.exit(0)
-    main(*sys.argv[1:])

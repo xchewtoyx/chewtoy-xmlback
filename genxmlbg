@@ -1,0 +1,39 @@
+#!/usr/bin/python
+# Copyright (c) 2012 Russell Heilling
+# See LICENSE.txt for license details
+import sys
+from xmlback.background import Background
+from xmlback.files import transitions
+
+def main(path='.', dest='-', duration=900, transition=2):
+    """
+    take a path and list all of the supported image types out to XML
+    format suitable for use as a gnome background.
+
+    path defaults to current directory, destination file defaults to
+    stdout. 
+
+    You cannot enable this background file from the Gnome 3 GUI at the
+    current time (2012-04-19, so the following shell command will be
+    required: 
+
+    gsettings set org.gnome.desktop.background picture-uri \
+              'file:///path/to/background.xml'
+    """
+    if dest == '-':
+        outfile = sys.stdout
+    else:
+        outfile = open(dest, "w")
+
+    background = Background()
+    for (fromfile, tofile) in transitions(path, shuffle=True):
+        background.add_image(fromfile, int(duration)-int(transition))
+        if tofile:
+            background.add_transition(fromfile, tofile, transition)
+    outfile.write(background.toxml())
+
+if __name__ == "__main__":
+    if len(sys.argv) > 5:
+        sys.stderr.write("Usage: xmlback.py [imgdir [outfile.xml]]")
+        sys.exit(0)
+    main(*sys.argv[1:])
